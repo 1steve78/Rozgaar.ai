@@ -1,26 +1,124 @@
 @import "tailwindcss";
-
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* --- Base Backgrounds --- */
+  /* A very cool, almost-white blue-grey to reduce eye strain */
+  --background: #F8FAFC; 
+  --surface: #FFFFFF;
+  
+  /* --- Typography --- */
+  /* Deep Navy instead of Black for softer contrast */
+  --foreground: #0F172A; 
+  --text-muted: #64748B;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* --- The Gen Z "Dopamine" Palette --- */
+  /* Primary: Electric Violet (Main Brand) */
+  --primary: #7C3AED; 
+  --primary-hover: #6D28D9;
+  --primary-foreground: #FFFFFF;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Secondary: Electric Cyan (For tags, success states, secondary buttons) */
+  --secondary: #06B6D4; 
+  --secondary-foreground: #FFFFFF;
+
+  /* Accent: Hot Coral (For "Apply Now" & urgent CTAs) */
+  --accent: #F43F5E; 
+  --accent-hover: #E11D48;
+  --accent-foreground: #FFFFFF;
+
+  /* Highlight: Zesty Lemon (For stickers, new tags, highlights) */
+  --highlight: #FBBF24;
+  
+  /* --- Shapes & Effects --- */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  
+  /* A colorful, diffused shadow for depth */
+  --shadow-color: 240deg 20% 80%;
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+  font-family: 'Plus Jakarta Sans', sans-serif; /* Highly recommended for this vibe */
+  -webkit-font-smoothing: antialiased;
 }
+
+/* --- Utility Classes for the Gen Z Look --- */
+
+/* 1. Glassmorphism Card (Frosted glass effect) */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(124, 58, 237, 0.1); /* Subtle purple glow */
+}
+
+/* 2. Gradient Text (For big headlines) */
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 3. Smooth Cards with "Pop" Hover */
+.job-card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid #E2E8F0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.job-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  border-color: var(--primary);
+}
+
+/* 4. Pill Buttons (Chunky and friendly) */
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-accent {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  box-shadow: 0 4px 14px 0 rgba(244, 63, 94, 0.39); /* Colored shadow glow */
+  transition: transform 0.2s;
+}
+
+.btn-accent:hover {
+  background-color: var(--accent-hover);
+  transform: scale(1.02);
+}
+
+/* 5. Tags (Soft background, dark text) */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.tag-purple { background: #EDE9FE; color: #5B21B6; }
+.tag-cyan   { background: #CFFAFE; color: #155E75; }
+.tag-orange { background: #FFEDD5; color: #9A3412; }

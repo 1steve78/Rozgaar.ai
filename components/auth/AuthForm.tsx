@@ -1,96 +1,128 @@
-'use client';
+"use client"
 
-import { useEffect, useRef, useState } from 'react';
-import { gsap } from 'gsap';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
-import SocialLogin from './SocialLogin';
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { login, signup } from "@/lib/actions/auth"
 
 export default function AuthForm() {
-  const formRef = useRef<HTMLDivElement>(null);
-  const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [fullName, setFullName] = useState("")
+  const [isSignup, setIsSignup] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from('.form-item', {
-        y: 25,
-        opacity: 0,
-        duration: 0.6,
-        stagger: 0.12,
-        ease: 'power2.out',
-      });
-    }, formRef);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
 
-    return () => ctx.revert();
-  }, [isLogin]);
+    // Basic validation
+    if (!email || !password) {
+      setError("Email and password are required")
+      return
+    }
+
+    if (isSignup && !fullName) {
+      setError("Full name is required")
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    setSuccessMessage(null)
+
+    try {
+      const res = isSignup
+        ? await signup(email, password, fullName)
+        : await login(email, password)
+
+      // Handle different response types
+      if (res && 'error' in res) {
+        setError(res.error)
+        setLoading(false)
+      } else if (res && 'success' in res) {
+        // Success! Redirect to dashboard
+        router.push("/dashboard")
+        router.refresh()
+      }
+    } catch (err: any) {
+      // Error handling - no logging in production
+      setError("Something went wrong. Please try again.")
+      setLoading(false)
+    }
+  }
 
   return (
-    <div ref={formRef} className="p-12">
-      <div className="form-item flex justify-center mb-8">
-        <div className="bg-gray-100 rounded-full p-1 flex">
-          {['Login', 'Sign Up'].map((label, i) => (
-            <button
-              key={label}
-              onClick={() => setIsLogin(i === 0)}
-              className={`px-8 py-2 rounded-full font-medium transition ${
-                isLogin === (i === 0)
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                  : 'text-gray-600'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="flex flex-col justify-center">
+      <h2 className="text-2xl font-bold mb-6">
+        {isSignup ? "Create account" : "Welcome back"}
+      </h2>
 
-      <h1 className="form-item text-3xl font-bold text-center mb-6">
-        {isLogin ? 'Welcome Back' : 'Create Account'}
-      </h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {isSignup && (
+          <input
+            className="w-full border rounded-lg p-3"
+            placeholder="Full name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            disabled={loading}
+          />
+        )}
 
-      <div className="form-item">
-        <SocialLogin />
-      </div>
-
-      <div className="space-y-4">
-        {!isLogin && <Input icon={<User />} placeholder="Full Name" />}
-
-        <Input icon={<Mail />} placeholder="Email" />
-
-        <Input
-          icon={<Lock />}
-          placeholder="Password"
-          type={showPassword ? 'text' : 'password'}
-          rightIcon={
-            <button onClick={() => setShowPassword(!showPassword)}>
-              {showPassword ? <EyeOff /> : <Eye />}
-            </button>
-          }
+        <input
+          className="w-full border rounded-lg p-3"
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
         />
 
-        {!isLogin && <Input icon={<Lock />} placeholder="Confirm Password" />}
+        <input
+          className="w-full border rounded-lg p-3"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
+        />
 
-        <button className="form-item w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl mt-4">
-          {isLogin ? 'Login' : 'Create Account'}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+            <div className="font-medium mb-1">✅ Account created!</div>
+            <div>{successMessage}</div>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-sky-600 hover:bg-sky-700 disabled:bg-sky-400 text-white rounded-lg p-3 font-medium transition-colors"
+        >
+          {loading ? "Please wait..." : isSignup ? "Sign up" : "Login"}
         </button>
-      </div>
-    </div>
-  );
-}
+      </form>
 
-function Input({ icon, rightIcon, ...props }: any) {
-  return (
-    <div className="relative form-item">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-        {icon}
-      </div>
-      <input
-        {...props}
-        className="w-full pl-12 pr-12 py-3 border-2 rounded-xl focus:border-indigo-500 outline-none"
-      />
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-        {rightIcon}
-      </div>
+      <button
+        onClick={() => {
+          setIsSignup(!isSignup)
+          setError(null)
+          setSuccessMessage(null)
+        }}
+        disabled={loading}
+        className="mt-4 text-sm text-sky-700 hover:text-sky-800 disabled:text-sky-400"
+      >
+        {isSignup
+          ? "Already have an account? Login"
+          : "New here? Create an account"}
+      </button>
     </div>
-  );
+  )
 }

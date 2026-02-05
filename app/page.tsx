@@ -1,19 +1,17 @@
-'use client';
-
-import Header from '../components/Header';
-import HeroSection from '../components/HeroSection';
-import FeaturedJobs from '../components/FeaturedJobs';
-import TrustedCompanies from '../components/TrustedCompanies';
+import Header from "@/components/home/Header";
+import HeroSection from "@/components/home/HeroSection";
+import Features from "@/components/home/Features";
+import TrustedCompanies from "@/components/home/TrustedCompanies";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Header />
+    <>
+      <Header />
+      <main className="w-full">
         <HeroSection />
-        <FeaturedJobs />
+        <Features />
         <TrustedCompanies />
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

@@ -1,10 +1,4 @@
-import './globals.css';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Rozgaar AI',
-  description: 'AI-powered job search platform',
-};
+import "./globals.css";
 
 export default function RootLayout({
   children,
@@ -13,7 +7,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <body className="bg-[#f8fbff] text-slate-900 antialiased">
         {children}
       </body>
     </html>

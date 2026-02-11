@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Rozgaar.ai is a Next.js app for skill‑based job discovery. It combines resume/skill extraction, AI‑assisted search, and multi‑source job ingestion to help users find relevant roles faster.
 
-## Getting Started
+**Features**
+- Skill-driven job search with smart filters
+- Multi-source job ingestion (Adzuna, RemoteOK, Remotive)
+- AI résumé skill extraction (PDF/DOCX)
+- Job recommendations based on user skills
+- Supabase auth + profile
 
-First, run the development server:
+**Tech Stack**
+- Next.js (App Router)
+- Supabase (Auth + Postgres)
+- Drizzle ORM
+- Tailwind CSS
+- Groq/OpenRouter for skill extraction
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**Getting Started**
+1. Install dependencies
+   ```bash
+   npm install
+   ```
+2. Create env file
+   ```bash
+   copy .env.example .env.local
+   ```
+3. Fill in required environment variables (see below).
+4. Run the dev server
+   ```bash
+   npm run dev
+   ```
+5. Open `http://localhost:3000`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Environment Variables**
+Set these in `.env.local` (see `.env.example`):
+- `DATABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+- `ADZUNA_APP_ID`
+- `ADZUNA_API_KEY`
+- `RAPID_API_KEY`
+- `OPENROUTER_API_KEY`
+- `GROQ_API_KEY`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Scripts**
+- `npm run dev` — start dev server
+- `npm run build` — build for production
+- `npm run start` — start production server
+- `npm run lint` — lint
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Notes**
+- Some DB columns (profile fields, salary) may require migrations before enabling select queries.
+- Ingestion is rate-limited and capped to 10 jobs per request.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Deploy**
+Use your preferred hosting (Vercel recommended for Next.js). Ensure all env vars are set in the hosting environment.

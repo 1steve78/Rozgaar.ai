@@ -1,15 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface SmartSearchBoxProps {
     onSearch: (query: string, smart?: boolean) => void;
     initialQuery?: string;
+    query?: string;
 }
 
-export default function SmartSearchBox({ onSearch, initialQuery = '' }: SmartSearchBoxProps) {
+export default function SmartSearchBox({
+    onSearch,
+    initialQuery = '',
+    query: externalQuery,
+}: SmartSearchBoxProps) {
     const [query, setQuery] = useState(initialQuery);
     const [smartMode, setSmartMode] = useState(true);
+
+    useEffect(() => {
+        if (typeof externalQuery === 'string') {
+            setQuery(externalQuery);
+        }
+    }, [externalQuery]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

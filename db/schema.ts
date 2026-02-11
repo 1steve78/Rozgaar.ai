@@ -17,6 +17,11 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey(), // references auth.users.id
   fullName: text("full_name"),
   email: text("email").unique(),
+  phone: text("phone"),
+  location: text("location"),
+  linkedin: text("linkedin"),
+  about: text("about"),
+  role: text("role"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 })
 
@@ -75,6 +80,7 @@ export const jobs = pgTable('jobs', {
   company: text('company'),
   location: text('location'),
   description: text('description'),
+  salary: text('salary'),
 
   jobType: jobTypeEnum('job_type'),
 

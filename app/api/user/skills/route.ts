@@ -54,6 +54,19 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Skill name is required' }, { status: 400 });
         }
 
+        // Ensure user profile exists to satisfy FK constraints
+        await db
+            .insert(users)
+            .values({
+                id: user.id,
+                email: user.email ?? '',
+                fullName:
+                    (user.user_metadata?.full_name as string | undefined) ||
+                    (user.user_metadata?.name as string | undefined) ||
+                    null,
+            })
+            .onConflictDoNothing();
+
         // Find or create skill
         let skill = await db
             .select()

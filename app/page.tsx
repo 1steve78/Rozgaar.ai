@@ -1,17 +1,15 @@
 import Header from "@/components/home/Header";
 import HeroSection from "@/components/home/HeroSection";
 import Features from "@/components/home/Features";
-import TrustedCompanies from "@/components/home/TrustedCompanies";
 
-export default function HomePage() {
+export default function LandingPage() {
   return (
-    <>
+    <div className="min-h-screen bg-white">
       <Header />
       <main className="w-full">
         <HeroSection />
         <Features />
-        <TrustedCompanies />
       </main>
-    </>
+    </div>
   );
 }

@@ -62,7 +62,18 @@ export async function GET(req: Request) {
     }
 
     const results = await db
-      .select()
+      .select({
+        id: jobs.id,
+        title: jobs.title,
+        company: jobs.company,
+        location: jobs.location,
+        description: jobs.description,
+        jobType: jobs.jobType,
+        source: jobs.source,
+        sourceUrl: jobs.sourceUrl,
+        postedAt: jobs.postedAt,
+        createdAt: jobs.createdAt,
+      })
       .from(jobs)
       .where(whereConditions)
       .orderBy(jobs.createdAt)

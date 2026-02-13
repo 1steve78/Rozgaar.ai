@@ -6,6 +6,8 @@ import {
   integer,
   primaryKey,
   pgEnum,
+  boolean,
+  jsonb,
 } from "drizzle-orm/pg-core"
 import { relations } from "drizzle-orm"
 
@@ -112,6 +114,56 @@ export const jobsSkills = pgTable(
     pk: primaryKey({ columns: [table.jobId, table.skillId] }),
   })
 )
+
+/* =====================================================
+   RATE LIMITING LOGS
+   ===================================================== */
+
+export const jobFetchLogs = pgTable("job_fetch_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }).defaultNow(),
+})
+
+export const chatMessageLogs = pgTable("chat_message_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+})
+
+/* =====================================================
+   USER ACTIVITY ANALYTICS
+   ===================================================== */
+
+export const userActivity = pgTable("user_activity", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+})
+
+/* =====================================================
+   JOB FEEDBACK
+   ===================================================== */
+
+export const jobFeedback = pgTable("job_feedback", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  jobId: uuid("job_id")
+    .notNull()
+    .references(() => jobs.id, { onDelete: "cascade" }),
+  relevant: boolean("relevant").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+})
 
 /* =====================================================
    RELATIONS

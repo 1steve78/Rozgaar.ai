@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 
 type UserProfile = {
@@ -44,6 +44,7 @@ export default function Header() {
     { href: '/dashboard', label: 'Home' },
     { href: '/jobs', label: 'Jobs' },
     { href: '/dashboard/findjobs', label: 'Find Jobs' },
+    { href: '/dashboard/skillmap-ai', label: 'Skill Map AI' },
   ];
 
   const isActive = (href: string) => {

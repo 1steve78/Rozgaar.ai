@@ -54,5 +54,9 @@ Set these in `.env.local` (see `.env.example`):
 - Some DB columns (profile fields, salary) may require migrations before enabling select queries.
 - Ingestion is rate-limited and capped to 10 jobs per request.
 
+**Limits (Free Tier)**
+- 3 job fetches per day
+- 10 chat messages per day
+
 **Deploy**
 Use your preferred hosting (Vercel recommended for Next.js). Ensure all env vars are set in the hosting environment.

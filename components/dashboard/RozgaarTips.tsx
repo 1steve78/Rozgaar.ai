@@ -175,23 +175,30 @@ export default function DailyTipsBox() {
     <div className="w-full">
       <div className="w-full">
         {isLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <div className="flex gap-2">
-              <div className="w-3 h-3 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-              <div className="w-3 h-3 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-3 h-3 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+          <div className="rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-600 to-blue-700 p-6 md:p-8 shadow-lg">
+            <div className="flex items-center justify-center py-10">
+              <div className="flex gap-2">
+                <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+              </div>
             </div>
           </div>
         ) : (
           <div className="transition-all duration-700">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Rozgaar Tips
+            <div className="rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-600 to-blue-700 p-6 md:p-8 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-2 mb-3">
+                <svg className="w-5 h-5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <div className="text-xs font-bold text-blue-100 uppercase tracking-wide">
+                  Rozgaar Tips
+                </div>
               </div>
-              <div className="mt-3 text-xl md:text-2xl font-semibold text-slate-900 min-h-[72px]">
+              <div className="mt-2 text-xl md:text-2xl font-semibold text-white min-h-[72px] leading-relaxed">
                 {displayText}
                 {phase !== 'holding' && (
-                  <span className="inline-block w-1 h-6 bg-cyan-500 ml-2 animate-blink align-middle"></span>
+                  <span className="inline-block w-1 h-6 bg-white ml-2 animate-blink align-middle"></span>
                 )}
               </div>
             </div>

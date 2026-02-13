@@ -18,6 +18,8 @@ export default function UnifiedJobCard({ job }: { job: Job }) {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [showInsights, setShowInsights] = useState(false);
+  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const salaryColor = useMemo(() => {
     const colors = [
@@ -62,6 +64,40 @@ export default function UnifiedJobCard({ job }: { job: Job }) {
 
   const toggleInsights = () => {
     setShowInsights(!showInsights);
+  };
+
+  const sendActivity = async (action: string, metadata?: Record<string, unknown>) => {
+    try {
+      await fetch('/api/activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, metadata }),
+      });
+    } catch (error) {
+      console.error('Failed to track activity:', error);
+    }
+  };
+
+  const sendFeedback = async (relevant: boolean) => {
+    if (feedbackLoading) return;
+    setFeedbackLoading(true);
+
+    try {
+      const response = await fetch(`/api/jobs/${job.id}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ relevant }),
+      });
+
+      if (response.ok) {
+        setFeedback(relevant ? 'up' : 'down');
+        sendActivity('job_feedback', { jobId: job.id, relevant });
+      }
+    } catch (error) {
+      console.error('Failed to send feedback:', error);
+    } finally {
+      setFeedbackLoading(false);
+    }
   };
 
   return (
@@ -165,10 +201,40 @@ export default function UnifiedJobCard({ job }: { job: Job }) {
         </button>
       </div>
 
+      <div className="relative mt-5 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => sendFeedback(true)}
+          disabled={feedbackLoading || feedback === 'up'}
+          className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+            feedback === 'up'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+          }`}
+        >
+          👍 Relevant
+        </button>
+        <button
+          type="button"
+          onClick={() => sendFeedback(false)}
+          disabled={feedbackLoading || feedback === 'down'}
+          className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+            feedback === 'down'
+              ? 'bg-rose-600 text-white'
+              : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+          }`}
+        >
+          👎 Not Relevant
+        </button>
+      </div>
+
       <a
         href={job.sourceUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() =>
+          sendActivity('job_apply', { jobId: job.id, sourceUrl: job.sourceUrl })
+        }
         className="relative mt-5 inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:text-blue-800"
       >
         View Full Job Posting

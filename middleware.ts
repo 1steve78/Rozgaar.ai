@@ -46,6 +46,21 @@ export async function middleware(req: NextRequest) {
     }
   });
 
+  const adminEmails = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+
+  // Protect admin routes
+  if (req.nextUrl.pathname.startsWith("/admin")) {
+    const userEmail = data.user?.email?.toLowerCase() || "";
+    if (!data.user || adminEmails.length === 0 || !adminEmails.includes(userEmail)) {
+      logger.info("Redirecting to / - admin access denied");
+      const redirectUrl = new URL("/", req.url);
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
   // Protect dashboard routes
   if (!data.user && req.nextUrl.pathname.startsWith("/dashboard")) {
     logger.info("Redirecting to /auth - no user");
@@ -65,5 +80,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth"],
+  matcher: ["/dashboard/:path*", "/auth", "/admin/:path*"],
 };

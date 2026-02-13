@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServer } from '@/supabase/server';
 import { db } from '@/lib/db';
-import { jobs, usersSkills, skills as skillsTable } from '@/db/schema';
+import { jobs, usersSkills, skills as skillsTable, jobsSkills } from '@/db/schema';
 import { matchJobs } from '@/lib/ai/jobMatcher';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('MatchAPI');
@@ -53,6 +53,29 @@ export async function GET(req: Request) {
             .orderBy(jobs.createdAt)
             .limit(100);
 
+        const jobIds = recentJobs.map(job => job.id);
+        const jobSkillsMap = new Map<string, string[]>();
+
+        if (jobIds.length > 0) {
+            const jobsSkillsData = await db
+                .select({
+                    jobId: jobsSkills.jobId,
+                    skillName: skillsTable.name,
+                })
+                .from(jobsSkills)
+                .innerJoin(skillsTable, eq(jobsSkills.skillId, skillsTable.id))
+                .where(inArray(jobsSkills.jobId, jobIds));
+
+            for (const row of jobsSkillsData) {
+                const skills = jobSkillsMap.get(row.jobId);
+                if (skills) {
+                    skills.push(row.skillName);
+                } else {
+                    jobSkillsMap.set(row.jobId, [row.skillName]);
+                }
+            }
+        }
+
         // Use AI to match and rank jobs
         const matches = await matchJobs(
             userSkills,
@@ -60,7 +83,7 @@ export async function GET(req: Request) {
                 id: job.id,
                 title: job.title,
                 description: job.description,
-                skills: [], // TODO: Extract skills from jobs_skills table
+                skills: jobSkillsMap.get(job.id) ?? [],
             }))
         );
 

@@ -62,12 +62,12 @@ export default function JobRecommendations({ userSkills, limit = 3 }: JobRecomme
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="h-5 w-40 bg-gray-200 rounded animate-pulse"></div>
+      <div className="flex flex-col h-full rounded-3xl border border-gray-100 bg-white p-6 lg:p-8 shadow-md">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
           <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
         </div>
-        <div className="space-y-4">
+        <div className="flex-1 space-y-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="rounded-xl border border-gray-100 bg-white p-4">
               <div className="h-4 w-3/4 bg-gray-200 rounded mb-3 animate-pulse"></div>
@@ -81,7 +81,7 @@ export default function JobRecommendations({ userSkills, limit = 3 }: JobRecomme
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-100 bg-red-50 p-6 shadow-sm">
+      <div className="flex flex-col h-full rounded-3xl border border-red-100 bg-red-50 p-6 lg:p-8 shadow-md">
         <div className="flex items-center gap-2 text-red-700">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -94,37 +94,39 @@ export default function JobRecommendations({ userSkills, limit = 3 }: JobRecomme
 
   if (jobs.length === 0) {
     return (
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Recommended Jobs</h3>
-        <div className="text-center py-8">
-          <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          <p className="text-sm text-gray-600">No recommendations yet</p>
-          <p className="text-xs text-gray-500 mt-1">Add more skills to get personalized job matches</p>
+      <div className="flex flex-col h-full rounded-3xl border border-gray-100 bg-white p-6 lg:p-8 shadow-md hover:shadow-lg transition-shadow">
+        <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-6">Recommended Jobs</h3>
+        <div className="flex-1 flex items-center justify-center py-8">
+          <div className="text-center">
+            <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <p className="text-sm text-gray-600">No recommendations yet</p>
+            <p className="text-xs text-gray-500 mt-1">Add more skills to get personalized job matches</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+    <div className="flex flex-col h-full rounded-3xl border border-gray-100 bg-white p-6 lg:p-8 shadow-md hover:shadow-lg transition-shadow">
+      <div className="mb-6 flex items-center justify-between">
+        <h3 className="text-lg lg:text-xl font-bold text-gray-900 flex items-center gap-2">
           Recommended Jobs
-          <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+          <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">
             {jobs.length}
           </span>
         </h3>
         <a
           href="/jobs"
-          className="text-sm font-medium text-blue-600 hover:text-blue-700 transition"
+          className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition"
         >
           See all
         </a>
       </div>
 
-      <div className="space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto">
         {jobs.map((job) => (
           <div
             key={job.id}
@@ -205,7 +207,7 @@ export default function JobRecommendations({ userSkills, limit = 3 }: JobRecomme
 
       <button
         onClick={() => window.location.href = '/find-jobs'}
-        className="mt-4 w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-blue-700 hover:to-blue-800 transition-all"
+        className="mt-6 w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md hover:from-blue-700 hover:to-blue-800 hover:shadow-lg transition-all"
       >
         Find More Jobs
       </button>

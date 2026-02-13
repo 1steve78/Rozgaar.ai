@@ -60,45 +60,28 @@ export default function ProfilePage() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState('');
 
-  const [experiences] = useState<Experience[]>([
-    {
-      id: '1',
-      title: 'Intern Software Developer',
-      company: 'TechSolutions Inc.',
-      duration: 'Jun 2023 - Aug 2023',
-      description: [
-        'Built frontend components using React.',
-        'Assisted in backend API integration with Node.js.',
-      ],
-    },
-  ]);
+  const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [educations, setEducations] = useState<Education[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
-  const [educations] = useState<Education[]>([
-    {
-      id: '1',
-      degree: 'B.Tech in Computer Science',
-      institution: 'University of Technology',
-      duration: '2020 - 2024',
-      details: 'CGPA: 8.5/10 | Coursework: Data Structures, Algorithms, DBMS',
-    },
-  ]);
+  // Modal states
+  const [experienceModal, setExperienceModal] = useState<{
+    isOpen: boolean;
+    mode: 'add' | 'edit';
+    data: Experience | null;
+  }>({ isOpen: false, mode: 'add', data: null });
 
-  const [projects] = useState<Project[]>([
-    {
-      id: '1',
-      title: 'AI-Powered Job Search Platform',
-      description:
-        'Built a platform connecting freshers with curated job opportunities using personalized recommendations.',
-      techStack: 'Python, Django, React',
-    },
-    {
-      id: '2',
-      title: 'E-commerce Website Clone',
-      description:
-        'Developed a full-stack e-commerce site with authentication and product catalog features.',
-      techStack: 'Node.js, PostgreSQL',
-    },
-  ]);
+  const [educationModal, setEducationModal] = useState<{
+    isOpen: boolean;
+    mode: 'add' | 'edit';
+    data: Education | null;
+  }>({ isOpen: false, mode: 'add', data: null });
+
+  const [projectModal, setProjectModal] = useState<{
+    isOpen: boolean;
+    mode: 'add' | 'edit';
+    data: Project | null;
+  }>({ isOpen: false, mode: 'add', data: null });
 
   useEffect(() => {
     const loadData = async () => {
@@ -177,11 +160,80 @@ export default function ProfilePage() {
     setTempValue('');
   };
 
-  const saveEdit = (field: keyof UserProfile) => {
-    setProfile((prev) => ({ ...prev, [field]: tempValue }));
+  const saveEdit = async (field: keyof UserProfile) => {
+    const value = tempValue;
+    const previousValue = profile[field] ?? '';
+    setProfile((prev) => ({ ...prev, [field]: value }));
     setEditingField(null);
     setTempValue('');
-    // TODO: Save to API
+
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      });
+
+      if (res.status === 401) {
+        router.replace('/auth/login');
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await parseJsonSafe(res);
+        throw new Error(data?.error || 'Failed to save profile');
+      }
+
+      const updatedProfile = await parseJsonSafe(res);
+      if (updatedProfile) {
+        setProfile((prev) => ({ ...prev, ...updatedProfile }));
+      }
+    } catch (err) {
+      console.error('Failed to save profile', err);
+      setProfile((prev) => ({ ...prev, [field]: previousValue }));
+    }
+  };
+
+  // Experience handlers
+  const handleSaveExperience = (exp: Experience) => {
+    if (experienceModal.mode === 'add') {
+      setExperiences([...experiences, exp]);
+    } else {
+      setExperiences(experiences.map((e) => (e.id === exp.id ? exp : e)));
+    }
+    setExperienceModal({ isOpen: false, mode: 'add', data: null });
+  };
+
+  const handleDeleteExperience = (id: string) => {
+    setExperiences(experiences.filter((e) => e.id !== id));
+  };
+
+  // Education handlers
+  const handleSaveEducation = (edu: Education) => {
+    if (educationModal.mode === 'add') {
+      setEducations([...educations, edu]);
+    } else {
+      setEducations(educations.map((e) => (e.id === edu.id ? edu : e)));
+    }
+    setEducationModal({ isOpen: false, mode: 'add', data: null });
+  };
+
+  const handleDeleteEducation = (id: string) => {
+    setEducations(educations.filter((e) => e.id !== id));
+  };
+
+  // Project handlers
+  const handleSaveProject = (proj: Project) => {
+    if (projectModal.mode === 'add') {
+      setProjects([...projects, proj]);
+    } else {
+      setProjects(projects.map((p) => (p.id === proj.id ? proj : p)));
+    }
+    setProjectModal({ isOpen: false, mode: 'add', data: null });
+  };
+
+  const handleDeleteProject = (id: string) => {
+    setProjects(projects.filter((p) => p.id !== id));
   };
 
   if (loading) {
@@ -209,7 +261,7 @@ export default function ProfilePage() {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            <p className="text-gray-600">Loading profile...</p>
+            <p className="text-gray-600">Loading your profile...</p>
           </div>
         </div>
       </div>
@@ -220,120 +272,23 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <Header />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-        <div className="grid gap-6 lg:gap-8 lg:grid-cols-[340px_1fr]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Sidebar */}
-          <aside className="space-y-6">
+          <aside className="lg:col-span-1 space-y-6">
             {/* Profile Card */}
             <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-md hover:shadow-lg transition-shadow">
               <div className="flex flex-col items-center text-center">
-                <div className="relative group">
-                  <div className="h-32 w-32 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center text-4xl font-bold shadow-lg">
-                    {initials}
-                  </div>
-                  <button className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50 transition">
-                    <svg
-                      className="w-5 h-5 text-gray-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                  </button>
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-lg">
+                  {initials}
                 </div>
-
-                {editingField === 'name' ? (
-                  <div className="mt-4 w-full">
-                    <input
-                      type="text"
-                      value={tempValue}
-                      onChange={(e) => setTempValue(e.target.value)}
-                      className="w-full px-3 py-2 border border-blue-300 rounded-lg text-center text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      autoFocus
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => saveEdit('name')}
-                        className="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-4 group/name cursor-pointer" onClick={() => startEdit('name', displayName)}>
-                    <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2 justify-center">
-                      {displayName}
-                      <svg
-                        className="w-4 h-4 text-gray-400 opacity-0 group-hover/name:opacity-100 transition-opacity"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </h2>
-                  </div>
-                )}
-
-                {editingField === 'role' ? (
-                  <div className="mt-2 w-full">
-                    <input
-                      type="text"
-                      value={tempValue}
-                      onChange={(e) => setTempValue(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-blue-300 rounded-lg text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      autoFocus
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => saveEdit('role')}
-                        className="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <p
-                    className="mt-2 text-sm text-blue-600 font-medium cursor-pointer hover:text-blue-700"
-                    onClick={() => startEdit('role', profile.role || '')}
-                  >
-                    {profile.role || 'Add your role'}
-                  </p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">{displayName}</h2>
+                {profile.role && (
+                  <p className="text-sm text-blue-600 font-medium mb-4">{profile.role}</p>
                 )}
               </div>
 
-              <div className="mt-8 space-y-4 text-sm">
+              <div className="space-y-3 mt-6">
                 <EditableField
                   icon={
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -346,7 +301,7 @@ export default function ProfilePage() {
                     </svg>
                   }
                   label="Email"
-                  value={profile.email || 'Add your email'}
+                  value={profile.email || 'Add email'}
                   field="email"
                   editingField={editingField}
                   tempValue={tempValue}
@@ -368,7 +323,7 @@ export default function ProfilePage() {
                     </svg>
                   }
                   label="Phone"
-                  value={profile.phone || 'Add your phone'}
+                  value={profile.phone || 'Add phone'}
                   field="phone"
                   editingField={editingField}
                   tempValue={tempValue}
@@ -396,7 +351,7 @@ export default function ProfilePage() {
                     </svg>
                   }
                   label="Location"
-                  value={profile.location || 'Add your location'}
+                  value={profile.location || 'Add location'}
                   field="location"
                   editingField={editingField}
                   tempValue={tempValue}
@@ -409,7 +364,7 @@ export default function ProfilePage() {
                 <EditableField
                   icon={
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                     </svg>
                   }
                   label="LinkedIn"
@@ -423,18 +378,18 @@ export default function ProfilePage() {
                   onTempChange={setTempValue}
                 />
               </div>
+            </div>
 
-              <div className="mt-8">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  About Me
-                </h3>
+            {/* About Section */}
+            <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-md hover:shadow-lg transition-shadow">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">About</h3>
+              <div>
                 {editingField === 'about' ? (
-                  <div className="mt-3">
+                  <div>
                     <textarea
                       value={tempValue}
                       onChange={(e) => setTempValue(e.target.value)}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
                       autoFocus
                     />
                     <div className="flex gap-2 mt-2">
@@ -454,17 +409,12 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <p
-                    className="mt-3 text-sm leading-relaxed text-gray-600 cursor-pointer hover:text-gray-800 transition"
-                    onClick={() =>
-                      startEdit(
-                        'about',
-                        profile.about ||
-                          'Share a short summary about your goals, strengths, and the kind of roles you are targeting.'
-                      )
-                    }
+                    className={`text-sm ${
+                      profile.about ? 'text-gray-600' : 'text-gray-400'
+                    } cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition`}
+                    onClick={() => startEdit('about', profile.about || '')}
                   >
-                    {profile.about ||
-                      'Share a short summary about your goals, strengths, and the kind of roles you are targeting. This helps recruiters understand your profile quickly.'}
+                    {profile.about || 'Add a brief description about yourself...'}
                   </p>
                 )}
               </div>
@@ -472,79 +422,141 @@ export default function ProfilePage() {
           </aside>
 
           {/* Main Content */}
-          <section className="space-y-6">
+          <section className="lg:col-span-2 space-y-6">
             {/* Experience */}
             <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-md hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Experience</h3>
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+                <button
+                  onClick={() =>
+                    setExperienceModal({ isOpen: true, mode: 'add', data: null })
+                  }
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   Add
                 </button>
               </div>
-              {experiences.map((exp) => (
-                <div key={exp.id} className="mb-4 last:mb-0">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{exp.title}</h4>
-                      <p className="text-sm text-blue-600">{exp.company}</p>
-                      <p className="text-xs text-gray-500 mt-1">{exp.duration}</p>
+              {experiences.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-8">
+                  No experience added yet. Click "Add" to get started.
+                </p>
+              ) : (
+                experiences.map((exp) => (
+                  <div key={exp.id} className="mb-4 last:mb-0">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{exp.title}</h4>
+                        <p className="text-sm text-blue-600">{exp.company}</p>
+                        <p className="text-xs text-gray-500 mt-1">{exp.duration}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            setExperienceModal({ isOpen: true, mode: 'edit', data: exp })
+                          }
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteExperience(exp.id)}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
+                    <ul className="mt-3 list-disc pl-5 text-sm text-gray-600 space-y-1">
+                      {exp.description.map((desc, i) => (
+                        <li key={i}>{desc}</li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="mt-3 list-disc pl-5 text-sm text-gray-600 space-y-1">
-                    {exp.description.map((desc, i) => (
-                      <li key={i}>{desc}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             {/* Education */}
             <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-md hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Education</h3>
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+                <button
+                  onClick={() =>
+                    setEducationModal({ isOpen: true, mode: 'add', data: null })
+                  }
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   Add
                 </button>
               </div>
-              {educations.map((edu) => (
-                <div key={edu.id} className="mb-4 last:mb-0">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{edu.degree}</h4>
-                      <p className="text-sm text-blue-600">{edu.institution}</p>
-                      <p className="text-xs text-gray-500 mt-1">{edu.duration}</p>
-                      <p className="text-sm text-gray-600 mt-2">{edu.details}</p>
+              {educations.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-8">
+                  No education added yet. Click "Add" to get started.
+                </p>
+              ) : (
+                educations.map((edu) => (
+                  <div key={edu.id} className="mb-4 last:mb-0">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{edu.degree}</h4>
+                        <p className="text-sm text-blue-600">{edu.institution}</p>
+                        <p className="text-xs text-gray-500 mt-1">{edu.duration}</p>
+                        <p className="text-sm text-gray-600 mt-2">{edu.details}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            setEducationModal({ isOpen: true, mode: 'edit', data: edu })
+                          }
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteEducation(edu.id)}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                        />
-                      </svg>
-                    </button>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             {/* Skills */}
@@ -559,44 +571,103 @@ export default function ProfilePage() {
             <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-md hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Projects</h3>
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+                <button
+                  onClick={() =>
+                    setProjectModal({ isOpen: true, mode: 'add', data: null })
+                  }
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   Add
                 </button>
               </div>
-              <div className="space-y-6">
-                {projects.map((project) => (
-                  <div key={project.id} className="pb-6 border-b border-gray-100 last:border-0 last:pb-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">{project.title}</h4>
-                        <p className="text-sm text-gray-600 mt-2">{project.description}</p>
-                        <p className="text-xs text-blue-600 mt-2 font-medium">
-                          Tech Stack: {project.techStack}
-                        </p>
+              {projects.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-8">
+                  No projects added yet. Click "Add" to get started.
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {projects.map((project) => (
+                    <div key={project.id} className="pb-6 border-b border-gray-100 last:border-0 last:pb-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900">{project.title}</h4>
+                          <p className="text-sm text-gray-600 mt-2">{project.description}</p>
+                          <p className="text-xs text-blue-600 mt-2 font-medium">
+                            Tech Stack: {project.techStack}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <button
+                            onClick={() =>
+                              setProjectModal({ isOpen: true, mode: 'edit', data: project })
+                            }
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProject(project.id)}
+                            className="text-gray-400 hover:text-red-600"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                      <button className="text-gray-400 hover:text-gray-600 ml-4">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
-                      </button>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {hasSkills && <FindJobsEntryPoint />}
           </section>
         </div>
       </div>
+
+      {/* Modals */}
+      {experienceModal.isOpen && (
+        <ExperienceModal
+          mode={experienceModal.mode}
+          data={experienceModal.data}
+          onSave={handleSaveExperience}
+          onClose={() => setExperienceModal({ isOpen: false, mode: 'add', data: null })}
+        />
+      )}
+
+      {educationModal.isOpen && (
+        <EducationModal
+          mode={educationModal.mode}
+          data={educationModal.data}
+          onSave={handleSaveEducation}
+          onClose={() => setEducationModal({ isOpen: false, mode: 'add', data: null })}
+        />
+      )}
+
+      {projectModal.isOpen && (
+        <ProjectModal
+          mode={projectModal.mode}
+          data={projectModal.data}
+          onSave={handleSaveProject}
+          onClose={() => setProjectModal({ isOpen: false, mode: 'add', data: null })}
+        />
+      )}
     </div>
   );
 }
@@ -685,6 +756,383 @@ function EditableField({
           d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
         />
       </svg>
+    </div>
+  );
+}
+
+// Experience Modal Component
+function ExperienceModal({
+  mode,
+  data,
+  onSave,
+  onClose,
+}: {
+  mode: 'add' | 'edit';
+  data: Experience | null;
+  onSave: (exp: Experience) => void;
+  onClose: () => void;
+}) {
+  const [formData, setFormData] = useState<Experience>(
+    data || {
+      id: Date.now().toString(),
+      title: '',
+      company: '',
+      duration: '',
+      description: [''],
+    }
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title || !formData.company || !formData.duration) return;
+    onSave({
+      ...formData,
+      description: formData.description.filter((d) => d.trim() !== ''),
+    });
+  };
+
+  const addDescriptionPoint = () => {
+    setFormData({ ...formData, description: [...formData.description, ''] });
+  };
+
+  const updateDescriptionPoint = (index: number, value: string) => {
+    const newDesc = [...formData.description];
+    newDesc[index] = value;
+    setFormData({ ...formData, description: newDesc });
+  };
+
+  const removeDescriptionPoint = (index: number) => {
+    setFormData({
+      ...formData,
+      description: formData.description.filter((_, i) => i !== index),
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {mode === 'add' ? 'Add Experience' : 'Edit Experience'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., Software Engineer"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Company *</label>
+            <input
+              type="text"
+              value={formData.company}
+              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., TechCorp Inc."
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Duration *</label>
+            <input
+              type="text"
+              value={formData.duration}
+              onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., Jan 2023 - Present"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Responsibilities & Achievements
+            </label>
+            {formData.description.map((desc, index) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={desc}
+                  onChange={(e) => updateDescriptionPoint(index, e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Describe your responsibility or achievement"
+                />
+                {formData.description.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeDescriptionPoint(index)}
+                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addDescriptionPoint}
+              className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add point
+            </button>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition"
+            >
+              {mode === 'add' ? 'Add Experience' : 'Save Changes'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Education Modal Component
+function EducationModal({
+  mode,
+  data,
+  onSave,
+  onClose,
+}: {
+  mode: 'add' | 'edit';
+  data: Education | null;
+  onSave: (edu: Education) => void;
+  onClose: () => void;
+}) {
+  const [formData, setFormData] = useState<Education>(
+    data || {
+      id: Date.now().toString(),
+      degree: '',
+      institution: '',
+      duration: '',
+      details: '',
+    }
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.degree || !formData.institution || !formData.duration) return;
+    onSave(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {mode === 'add' ? 'Add Education' : 'Edit Education'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Degree *</label>
+            <input
+              type="text"
+              value={formData.degree}
+              onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., B.Tech in Computer Science"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Institution *</label>
+            <input
+              type="text"
+              value={formData.institution}
+              onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., University of Technology"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Duration *</label>
+            <input
+              type="text"
+              value={formData.duration}
+              onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., 2020 - 2024"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Additional Details
+            </label>
+            <textarea
+              value={formData.details}
+              onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
+              placeholder="e.g., CGPA: 8.5/10 | Coursework: Data Structures, Algorithms"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition"
+            >
+              {mode === 'add' ? 'Add Education' : 'Save Changes'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Project Modal Component
+function ProjectModal({
+  mode,
+  data,
+  onSave,
+  onClose,
+}: {
+  mode: 'add' | 'edit';
+  data: Project | null;
+  onSave: (proj: Project) => void;
+  onClose: () => void;
+}) {
+  const [formData, setFormData] = useState<Project>(
+    data || {
+      id: Date.now().toString(),
+      title: '',
+      description: '',
+      techStack: '',
+    }
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title || !formData.description || !formData.techStack) return;
+    onSave(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {mode === 'add' ? 'Add Project' : 'Edit Project'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Project Title *</label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., E-commerce Platform"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+              placeholder="Describe what the project does and your role in it"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tech Stack *</label>
+            <input
+              type="text"
+              value={formData.techStack}
+              onChange={(e) => setFormData({ ...formData, techStack: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., React, Node.js, MongoDB"
+              required
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition"
+            >
+              {mode === 'add' ? 'Add Project' : 'Save Changes'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

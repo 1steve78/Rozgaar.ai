@@ -1,9 +1,10 @@
 import { db } from '@/lib/db';
-import { jobs } from '@/db/schema';
+import { jobs, jobsSkills, skills as skillsTable } from '@/db/schema';
 import { fetchAdzunaJobs } from './sources/adzuna';
 import { fetchRemoteOKJobs } from './sources/remoteok';
 import { fetchRemotiveJobs } from './sources/remotive';
 import { extractSkills } from '@/lib/ai/extractSkills';
+import { eq } from 'drizzle-orm';
 
 export async function ingestJobs(query: string) {
   const safeFetch = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
@@ -34,8 +35,6 @@ export async function ingestJobs(query: string) {
   ]);
 
   const SKILL_CONCURRENCY = 5;
-  const BATCH_SIZE = 100;
-
   const mapWithConcurrency = async <T, R>(
     items: T[],
     limit: number,
@@ -78,25 +77,75 @@ export async function ingestJobs(query: string) {
   );
 
   const now = new Date();
-  const values = enrichedJobs.map(({ job }) => ({
-    title: job.title,
-    company: job.company ?? null,
-    location: job.location ?? null,
-    description: job.description ?? null,
-    jobType:
-      job.jobType && allowedJobTypes.has(job.jobType)
-        ? job.jobType
-        : null,
-    source: job.source,
-    sourceUrl: job.sourceUrl,
-    postedAt: job.postedAt ?? null,
-    createdAt: now,
-  }));
+  let insertedCount = 0;
 
-  for (let i = 0; i < values.length; i += BATCH_SIZE) {
-    const batch = values.slice(i, i + BATCH_SIZE);
-    await db.insert(jobs).values(batch).onConflictDoNothing();
+  for (const { job, skills } of enrichedJobs) {
+    const normalizedSkills = Array.from(
+      new Set(
+        (skills || [])
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean)
+      )
+    );
+
+    const existingJob = await db
+      .select({ id: jobs.id })
+      .from(jobs)
+      .where(eq(jobs.sourceUrl, job.sourceUrl))
+      .limit(1);
+
+    let jobId: string;
+    if (existingJob.length > 0) {
+      jobId = existingJob[0].id;
+    } else {
+      const insertedJob = await db
+        .insert(jobs)
+        .values({
+          title: job.title,
+          company: job.company ?? null,
+          location: job.location ?? null,
+          description: job.description ?? null,
+          jobType:
+            job.jobType && allowedJobTypes.has(job.jobType)
+              ? job.jobType
+              : null,
+          source: job.source,
+          sourceUrl: job.sourceUrl,
+          postedAt: job.postedAt ?? null,
+          createdAt: now,
+        })
+        .returning({ id: jobs.id });
+
+      jobId = insertedJob[0].id;
+      insertedCount += 1;
+    }
+
+    if (normalizedSkills.length === 0) continue;
+
+    for (const skillName of normalizedSkills) {
+      let skill = await db
+        .select({ id: skillsTable.id })
+        .from(skillsTable)
+        .where(eq(skillsTable.name, skillName))
+        .limit(1);
+
+      let skillId: string;
+      if (skill.length === 0) {
+        const created = await db
+          .insert(skillsTable)
+          .values({ name: skillName })
+          .returning({ id: skillsTable.id });
+        skillId = created[0].id;
+      } else {
+        skillId = skill[0].id;
+      }
+
+      await db
+        .insert(jobsSkills)
+        .values({ jobId, skillId })
+        .onConflictDoNothing();
+    }
   }
 
-  return { inserted: values.length };
+  return insertedCount;
 }

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { skills as skillsTable, usersSkills } from "@/db/schema";
 import { inArray } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { trackActivity } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ async function extractTextFromFile(file: File, ext: string) {
       const parsed = await pdfParse(buffer);
       return parsed.text || "";
     } catch (error) {
-      logger.warn("PDF parse failed, returning empty text", error);
+      logger.warn("PDF parse failed, returning empty text", { data: { error } });
       return "";
     }
   }
@@ -213,6 +214,12 @@ export async function POST(req: Request) {
     logger.info(
       `Extracted ${deduped.length} skills from resume for user ${user.id}`
     );
+
+    trackActivity(user.id, "resume_upload", {
+      skillsExtracted: deduped.length,
+    }).catch((error) => {
+      logger.warn("Failed to track resume upload", error);
+    });
 
     return NextResponse.json({ skills: deduped });
   } catch (error) {

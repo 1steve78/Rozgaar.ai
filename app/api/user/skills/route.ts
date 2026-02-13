@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { users, usersSkills, skills as skillsTable } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { createLogger } from '@/lib/logger';
+import { trackActivity } from '@/lib/analytics';
 
 const logger = createLogger('SkillsAPI');
 
@@ -101,6 +102,10 @@ export async function POST(req: Request) {
 
         logger.info(`Added/updated skill "${skillName}" for user ${user.id}`);
 
+        trackActivity(user.id, 'skill_add', { skillName }).catch((error) => {
+            logger.warn('Failed to track skill add', { data: { error } });
+        });
+
         return NextResponse.json({ success: true, skillName });
     } catch (error) {
         logger.error('Failed to add skill', error);
@@ -135,6 +140,10 @@ export async function DELETE(req: Request) {
             ));
 
         logger.info(`Removed skill ${skillId} for user ${user.id}`);
+
+        trackActivity(user.id, 'skill_remove', { skillId }).catch((error) => {
+            logger.warn('Failed to track skill remove', { data: { error } });
+        });
 
         return NextResponse.json({ success: true });
     } catch (error) {

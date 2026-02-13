@@ -1,5 +1,7 @@
 import { ingestJobs } from '@/lib/jobs/ingest';
 import { NextResponse } from 'next/server';
+import { createSupabaseServer } from '@/supabase/server';
+import { checkJobFetchLimit } from '@/lib/rateLimiter';
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 3;
@@ -15,6 +17,16 @@ function isRateLimited(key: string) {
 }
 
 export async function POST(req: Request) {
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     req.headers.get('x-real-ip') ||
@@ -25,6 +37,13 @@ export async function POST(req: Request) {
       { error: 'Rate limit exceeded. Please try again later.' },
       { status: 429, headers: { 'Retry-After': '60' } }
     );
+  }
+
+  try {
+    await checkJobFetchLimit(user.id);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Rate limit reached';
+    return NextResponse.json({ error: message }, { status: 429 });
   }
 
   const { query } = await req.json();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent } from 'react';
 
 type SkillInputProps = {
   skills?: string[];
@@ -18,25 +18,9 @@ export default function SkillInput({
   const [internalSkills, setInternalSkills] = useState<string[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState<boolean>(
-    (skills ?? internalSkills).length === 0
-  );
-  const initialVisibilitySync = useRef(true);
+  const [showForm, setShowForm] = useState(false);
 
   const currentSkills = skills ?? internalSkills;
-  const currentSkillsCount = currentSkills.length;
-
-  useEffect(() => {
-    if (initialVisibilitySync.current) {
-      setShowForm(currentSkillsCount === 0);
-      initialVisibilitySync.current = false;
-      return;
-    }
-
-    if (currentSkillsCount === 0) {
-      setShowForm(true);
-    }
-  }, [currentSkillsCount]);
 
   const addSkill = () => {
     if (!input.trim()) return;
@@ -123,7 +107,7 @@ export default function SkillInput({
   return (
     <div
       id="skills-input"
-      className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+      className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
     >
       {/* HEADER */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -133,44 +117,55 @@ export default function SkillInput({
 
         {/* MODE SWITCH */}
         <div className="flex items-center gap-3">
-          {currentSkills.length > 0 && (
+          {!showForm && (
             <button
               type="button"
-              onClick={() => setShowForm(prev => !prev)}
-              className="rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-100"
+              onClick={() => setShowForm(true)}
+              className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-blue-700"
             >
-              {showForm ? 'Close' : 'Add more skills'}
+              {currentSkills.length > 0 ? 'Add more skills' : 'Add skills'}
             </button>
           )}
-          <div className="flex rounded-full bg-gray-100 p-1 text-xs sm:text-sm">
-            <button
-              onClick={() => setMode('manual')}
-              className={`rounded-full px-4 py-1.5 transition ${
-                mode === 'manual'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Type
-            </button>
-            <button
-              onClick={() => setMode('resume')}
-              className={`rounded-full px-4 py-1.5 transition ${
-                mode === 'resume'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Resume
-            </button>
-          </div>
+          {showForm && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="rounded-full bg-gray-100 px-4 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-200"
+              >
+                Close
+              </button>
+              <div className="flex rounded-full bg-gray-100 p-1 text-xs sm:text-sm">
+                <button
+                  onClick={() => setMode('manual')}
+                  className={`rounded-full px-4 py-1.5 transition ${
+                    mode === 'manual'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Type
+                </button>
+                <button
+                  onClick={() => setMode('resume')}
+                  className={`rounded-full px-4 py-1.5 transition ${
+                    mode === 'resume'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Resume
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* MANUAL INPUT */}
       {showForm && mode === 'manual' && (
         <>
-          <div className="mt-5 flex items-center gap-3">
+          <div className="mt-3 flex items-center gap-3">
             <input
               value={input}
               onChange={e => setInput(e.target.value)}
@@ -180,7 +175,7 @@ export default function SkillInput({
             />
             <button
               onClick={addSkill}
-              className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
+              className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
             >
               Add
             </button>
@@ -188,7 +183,7 @@ export default function SkillInput({
 
           {/* SKILL TAGS */}
           {currentSkills.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               {currentSkills.map(skill => (
                 <span
                   key={skill}

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/supabase/server";
 import { db } from "@/lib/db";
-import { skills as skillsTable, usersSkills } from "@/db/schema";
+import { skills as skillsTable, users, usersSkills } from "@/db/schema";
 import { inArray } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { trackActivity } from "@/lib/analytics";
@@ -172,6 +172,9 @@ export async function POST(req: Request) {
     if (deduped.length === 0) {
       return NextResponse.json({ skills: [] });
     }
+
+    // Ensure profile row exists for FK integrity
+    await db.insert(users).values({ id: user.id }).onConflictDoNothing();
 
     const skillNamesLower = deduped.map((s) => s.toLowerCase());
     const existing = await db

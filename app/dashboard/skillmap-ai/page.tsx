@@ -38,6 +38,8 @@ export default function ChatbotPage() {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [hasSkills, setHasSkills] = useState(true);
+  const [accessBlocked, setAccessBlocked] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -51,7 +53,24 @@ export default function ChatbotPage() {
       setUserId(data.user.id);
     };
 
+    const loadSkills = async () => {
+      try {
+        const res = await fetch('/api/user/skills');
+        const data = await res.json().catch(() => ({}));
+        const skills = (data?.skills || []).map((s: any) => s.skillName ?? s.name ?? s);
+        if (!skills || skills.length === 0) {
+          if (isMounted) {
+            setHasSkills(false);
+            setAccessBlocked(true);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+
     loadUser();
+    loadSkills();
 
     return () => {
       isMounted = false;
@@ -59,6 +78,7 @@ export default function ChatbotPage() {
   }, []);
 
   const sendMessage = async (overrideMessage?: string) => {
+    if (!hasSkills) return;
     const trimmed = (overrideMessage ?? input).trim();
     if (!trimmed) return;
 
@@ -123,7 +143,26 @@ export default function ChatbotPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex flex-col">
       <Header />
 
-      <main className="relative flex-1 overflow-y-auto pb-44">
+      {accessBlocked ? (
+        <main className="flex-1 flex items-center justify-center px-6">
+          <div className="max-w-xl text-center">
+            <h1 className="text-3xl font-bold text-slate-900 mb-3">Skills required</h1>
+            <p className="text-slate-600 mb-6">
+              Add at least one skill on your dashboard to unlock Skill Map AI.
+            </p>
+            <button
+              onClick={() => {
+                window.location.href = '/dashboard?addSkills=1';
+              }}
+              className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
+              Go to dashboard
+            </button>
+          </div>
+        </main>
+      ) : (
+        <>
+          <main className="relative flex-1 overflow-y-auto pb-44">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-16 left-1/4 h-72 w-72 rounded-full bg-blue-200/30 blur-3xl" />
           <div className="absolute bottom-10 right-1/4 h-72 w-72 rounded-full bg-indigo-200/25 blur-3xl" />
@@ -154,7 +193,11 @@ export default function ChatbotPage() {
                         Skill Guide Assistant
                       </span>
                       <div className="mt-2 text-slate-800 leading-relaxed">
-                        {renderMessageContent(msg.content)}
+                        {idx === messages.length - 1 ? (
+                          <TypewriterMessage text={msg.content} />
+                        ) : (
+                          renderMessageContent(msg.content)
+                        )}
                       </div>
 
                       {msg.recommendations && msg.recommendations.length > 0 && (
@@ -278,69 +321,71 @@ export default function ChatbotPage() {
             )}
           </section>
         </div>
-      </main>
+          </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/85 backdrop-blur-xl border-t border-slate-200/80 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex flex-wrap gap-2 mb-3">
-            {quickActions.map((action, idx) => (
-              <button
-                key={idx}
-                onClick={() => sendMessage(action.label)}
-                className="px-3.5 py-1.5 rounded-full bg-slate-100/90 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-sm font-medium transition-colors flex items-center gap-2"
-              >
-                <span>{action.badge}</span>
-                {action.label}
-              </button>
-            ))}
-          </div>
+          <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/85 backdrop-blur-xl border-t border-slate-200/80 shadow-[0_-10px_30px_rgba(15,23,42,0.08)]">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3">
+              <div className="flex flex-wrap gap-2 mb-3">
+                {quickActions.map((action, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => sendMessage(action.label)}
+                    className="px-3.5 py-1.5 rounded-full bg-slate-100/90 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <span>{action.badge}</span>
+                    {action.label}
+                  </button>
+                ))}
+              </div>
 
-          <div className="flex gap-3 items-center">
-            <button className="p-3 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+              <div className="flex gap-3 items-center">
+                <button className="p-3 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                    />
+                  </svg>
+                </button>
+
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Tell me your career goals or upload your resume..."
+                  className="flex-1 px-5 py-3.5 rounded-2xl border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400"
+                  disabled={loading}
                 />
-              </svg>
-            </button>
 
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Tell me your career goals or upload your resume..."
-              className="flex-1 px-5 py-3.5 rounded-2xl border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400"
-              disabled={loading}
-            />
+                <button
+                  onClick={() => sendMessage()}
+                  disabled={loading || !input.trim()}
+                  className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                    />
+                  </svg>
+                </button>
+              </div>
 
-            <button
-              onClick={() => sendMessage()}
-              disabled={loading || !input.trim()}
-              className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                />
-              </svg>
-            </button>
+              <p className="text-xs text-center text-slate-500 mt-3">
+                Skill Guide AI can make mistakes. Consider checking important info.
+              </p>
+              {apiError && (
+                <p className="text-xs text-center text-red-600 mt-2">{apiError}</p>
+              )}
+            </div>
           </div>
-
-          <p className="text-xs text-center text-slate-500 mt-3">
-            Skill Guide AI can make mistakes. Consider checking important info.
-          </p>
-          {apiError && (
-            <p className="text-xs text-center text-red-600 mt-2">{apiError}</p>
-          )}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -401,6 +446,31 @@ function renderMessageContent(content: string) {
   }
 
   return <div className="space-y-3">{blocks}</div>;
+}
+
+function TypewriterMessage({ text, speed = 14 }: { text: string; speed?: number }) {
+  const [displayed, setDisplayed] = useState('');
+
+  useEffect(() => {
+    if (!text) {
+      setDisplayed('');
+      return;
+    }
+
+    let index = 0;
+    setDisplayed('');
+    const interval = setInterval(() => {
+      index += 1;
+      setDisplayed(text.slice(0, index));
+      if (index >= text.length) {
+        clearInterval(interval);
+      }
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [text, speed]);
+
+  return renderMessageContent(displayed);
 }
 
 function renderInlineBold(text: string) {

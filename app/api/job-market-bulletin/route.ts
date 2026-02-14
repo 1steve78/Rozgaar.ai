@@ -64,7 +64,7 @@ export async function GET() {
       id: index + 1,
       type: "TRENDING_ROLE",
       title: result.title,
-      description: `${result.count} new jobs posted`,
+      description: "New jobs posted",
       trend: getTrend(result.count),
       updatedAt: "Just now",
     }));

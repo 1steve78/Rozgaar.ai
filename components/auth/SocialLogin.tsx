@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { supabase } from '@/supabase/client';
+import { supabase } from "@/supabase/client";
 
 export default function SocialLogin() {
-  const signInWithProvider = async (provider: 'google' | 'linkedin') => {
+  const signInWithProvider = async (provider: "google" | "linkedin") => {
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -15,17 +15,27 @@ export default function SocialLogin() {
   return (
     <div className="space-y-3">
       <button
-        onClick={() => signInWithProvider('google')}
-        className="w-full flex justify-center gap-3 bg-sky-50 hover:bg-sky-100 border rounded-lg py-3"
+        onClick={() => signInWithProvider("google")}
+        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
       >
-        🔍 Continue with Google
+        <span className="flex items-center justify-center gap-3">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-[13px] font-bold text-slate-700 shadow-inner ring-1 ring-slate-200">
+            G
+          </span>
+          Continue with Google
+        </span>
       </button>
 
       <button
-        onClick={() => signInWithProvider('linkedin')}
-        className="w-full flex justify-center gap-3 bg-sky-50 hover:bg-sky-100 border rounded-lg py-3"
+        onClick={() => signInWithProvider("linkedin")}
+        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
       >
-        💼 Continue with LinkedIn
+        <span className="flex items-center justify-center gap-3">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-[#0A66C2] text-[12px] font-bold text-white shadow-inner">
+            in
+          </span>
+          Continue with LinkedIn
+        </span>
       </button>
     </div>
   );

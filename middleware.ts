@@ -46,6 +46,23 @@ export async function middleware(req: NextRequest) {
     }
   });
 
+  const publicPaths = new Set<string>(['/', '/auth', '/auth/callback']);
+
+  const pathname = req.nextUrl.pathname;
+  const isPublicPath = publicPaths.has(pathname);
+
+  if (!data.user) {
+    if (pathname.startsWith('/api')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!isPublicPath) {
+      logger.info('Redirecting to /auth - restricted page');
+      const redirectUrl = new URL('/auth', req.url);
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
   const adminEmails = (process.env.ADMIN_EMAILS || "")
     .split(",")
     .map((email) => email.trim().toLowerCase())
@@ -61,13 +78,6 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Protect dashboard routes
-  if (!data.user && req.nextUrl.pathname.startsWith("/dashboard")) {
-    logger.info("Redirecting to /auth - no user");
-    const redirectUrl = new URL("/auth", req.url);
-    return NextResponse.redirect(redirectUrl);
-  }
-
   // Redirect authenticated users away from auth page
   if (data.user && req.nextUrl.pathname === "/auth") {
     logger.info("Redirecting to /dashboard - user logged in");
@@ -80,5 +90,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth", "/admin/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

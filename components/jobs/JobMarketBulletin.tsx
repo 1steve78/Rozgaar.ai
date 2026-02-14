@@ -8,7 +8,7 @@ const mockData: JobMarketItem[] = [
     id: 1,
     type: "TRENDING_ROLE",
     title: "AI Engineer",
-    description: "Hiring up 23% this week",
+    description: "Hiring trending this week",
     trend: "up",
     updatedAt: "2 min ago",
   },
@@ -16,7 +16,7 @@ const mockData: JobMarketItem[] = [
     id: 2,
     type: "SKILL",
     title: "React + TypeScript",
-    description: "Appearing in 41% of new listings",
+    description: "Frequently requested in new listings",
     trend: "up",
     updatedAt: "5 min ago",
   },
@@ -72,15 +72,11 @@ const JobMarketBulletin = () => {
           {[...items, ...items].map((item, index) => (
             <div key={`${item.id}-${index}`} className="ticker__item">
               <span className="font-medium text-slate-900">{item.title}</span>
-              <span className="text-sm text-slate-600">
-                {item.description}
-              </span>
               <span
                 className={`text-xs font-semibold ${trendColor[item.trend]}`}
               >
                 {trendSymbol[item.trend]}
               </span>
-              <span className="text-xs text-slate-400">{item.updatedAt}</span>
             </div>
           ))}
         </div>

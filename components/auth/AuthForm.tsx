@@ -1,68 +1,75 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { login, signup } from "@/lib/actions/auth"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { login, signup } from "@/lib/actions/auth";
 
 export default function AuthForm() {
-  const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [fullName, setFullName] = useState("")
-  const [isSignup, setIsSignup] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [isSignup, setIsSignup] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+    e.preventDefault();
 
-    // Basic validation
     if (!email || !password) {
-      setError("Email and password are required")
-      return
+      setError("Email and password are required");
+      return;
     }
 
     if (isSignup && !fullName) {
-      setError("Full name is required")
-      return
+      setError("Full name is required");
+      return;
     }
 
-    setLoading(true)
-    setError(null)
-    setSuccessMessage(null)
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
 
     try {
       const res = isSignup
         ? await signup(email, password, fullName)
-        : await login(email, password)
+        : await login(email, password);
 
-      // Handle different response types
-      if (res && 'error' in res) {
-        setError(res.error)
-        setLoading(false)
-      } else if (res && 'success' in res) {
-        // Success! Redirect to dashboard
-        router.push("/dashboard")
-        router.refresh()
+      if (res && "error" in res) {
+        setError(res.error);
+        setLoading(false);
+      } else if (res && "success" in res) {
+        router.push("/dashboard");
+        router.refresh();
       }
-    } catch (err: any) {
-      // Error handling - no logging in production
-      setError("Something went wrong. Please try again.")
-      setLoading(false)
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
     }
   }
 
   return (
     <div className="flex flex-col justify-center">
-      <h2 className="text-2xl font-bold mb-6">
-        {isSignup ? "Create account" : "Welcome back"}
-      </h2>
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blue-600">
+          Welcome
+        </p>
+        <h2 className="text-4xl font-semibold text-slate-900">
+          {isSignup ? "Create your account" : "Welcome back"}
+        </h2>
+        <p className="text-sm text-slate-500">
+          {isSignup
+            ? "Start your skill-based job search in minutes."
+            : "Log in to continue building your career path."}
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         {isSignup && (
           <input
-            className="w-full border rounded-lg p-3"
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             placeholder="Full name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -71,7 +78,7 @@ export default function AuthForm() {
         )}
 
         <input
-          className="w-full border rounded-lg p-3"
+          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
           type="email"
           placeholder="Email"
           value={email}
@@ -79,24 +86,34 @@ export default function AuthForm() {
           disabled={loading}
         />
 
-        <input
-          className="w-full border rounded-lg p-3"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={loading}
-        />
+        <div className="relative">
+          <input
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-14 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            disabled={loading}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 transition hover:text-slate-700 disabled:text-slate-300"
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {error}
           </div>
         )}
 
         {successMessage && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-            <div className="font-medium mb-1">✅ Account created!</div>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            <div className="font-medium mb-1">Account created.</div>
             <div>{successMessage}</div>
           </div>
         )}
@@ -104,7 +121,7 @@ export default function AuthForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-sky-600 hover:bg-sky-700 disabled:bg-sky-400 text-white rounded-lg p-3 font-medium transition-colors"
+          className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_32px_rgba(37,99,235,0.25)] transition hover:-translate-y-0.5 hover:bg-blue-700 disabled:translate-y-0 disabled:bg-blue-400"
         >
           {loading ? "Please wait..." : isSignup ? "Sign up" : "Login"}
         </button>
@@ -112,17 +129,17 @@ export default function AuthForm() {
 
       <button
         onClick={() => {
-          setIsSignup(!isSignup)
-          setError(null)
-          setSuccessMessage(null)
+          setIsSignup(!isSignup);
+          setError(null);
+          setSuccessMessage(null);
         }}
         disabled={loading}
-        className="mt-4 text-sm text-sky-700 hover:text-sky-800 disabled:text-sky-400"
+        className="mt-5 text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:text-blue-300"
       >
         {isSignup
           ? "Already have an account? Login"
           : "New here? Create an account"}
       </button>
     </div>
-  )
+  );
 }

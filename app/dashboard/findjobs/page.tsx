@@ -77,6 +77,7 @@ export default function FindJobsPage() {
   const [hasError, setHasError] = useState(false);
   const [userSkills, setUserSkills] = useState<string[]>([]);
   const [skillsLoading, setSkillsLoading] = useState(true);
+  const [accessBlocked, setAccessBlocked] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -88,7 +89,9 @@ export default function FindJobsPage() {
         const skills = (data?.skills || []).map((skill: any) => skill.skillName ?? skill.name ?? skill);
 
         if (!skills || skills.length === 0) {
-          router.replace('/dashboard?addSkills=1');
+          if (mounted) {
+            setAccessBlocked(true);
+          }
           return;
         }
 
@@ -245,6 +248,20 @@ export default function FindJobsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <Header />
+      {accessBlocked ? (
+        <div className="max-w-3xl mx-auto px-6 py-20 text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">Skills required</h1>
+          <p className="text-gray-600 mb-6">
+            Add at least one skill on your dashboard to unlock Find Jobs.
+          </p>
+          <button
+            onClick={() => router.replace('/dashboard?addSkills=1')}
+            className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+          >
+            Go to dashboard
+          </button>
+        </div>
+      ) : (
       <div className="max-w-7xl mx-auto px-6 py-12">
         <SearchHeader />
 
@@ -287,6 +304,7 @@ export default function FindJobsPage() {
 
         <InitialState visible={!isLoading && !searchPerformed} />
       </div>
+      )}
     </div>
   );
 }

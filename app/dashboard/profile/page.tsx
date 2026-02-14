@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/home/Header';
 import SkillInput from '@/components/SkillInput';
 import FindJobsEntryPoint from '@/components/home/FindJobEntryPoint';
+import { supabase } from '@/supabase/client';
 
 type UserProfile = {
   name?: string;
@@ -59,6 +60,15 @@ export default function ProfilePage() {
   const [savingSkill, setSavingSkill] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState('');
+  const [passwordForm, setPasswordForm] = useState({
+    next: '',
+    confirm: '',
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [educations, setEducations] = useState<Education[]>([]);
@@ -234,6 +244,39 @@ export default function ProfilePage() {
 
   const handleDeleteProject = (id: string) => {
     setProjects(projects.filter((p) => p.id !== id));
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (!passwordForm.next || passwordForm.next.length < 6) {
+      setPasswordError('New password must be at least 6 characters.');
+      return;
+    }
+
+    if (passwordForm.next !== passwordForm.confirm) {
+      setPasswordError('New password and confirmation do not match.');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordForm.next,
+      });
+
+      if (error) {
+        setPasswordError(error.message || 'Failed to update password.');
+        return;
+      }
+
+      setPasswordSuccess('Password updated successfully.');
+      setPasswordForm({ next: '', confirm: '' });
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   if (loading) {
@@ -418,6 +461,94 @@ export default function ProfilePage() {
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Security Section */}
+            <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Security</h3>
+                {showPasswordForm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords((prev) => !prev)}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    {showPasswords ? 'Hide' : 'Show'} passwords
+                  </button>
+                )}
+              </div>
+              <p className="mb-4 text-xs text-slate-500">
+                Use a strong password you do not reuse elsewhere.
+              </p>
+
+              {!showPasswordForm ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordForm(true);
+                    setPasswordError(null);
+                    setPasswordSuccess(null);
+                  }}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+                >
+                  Change password
+                </button>
+              ) : (
+                <form onSubmit={handleChangePassword} className="space-y-3">
+                  <input
+                    type={showPasswords ? 'text' : 'password'}
+                    placeholder="New password"
+                    value={passwordForm.next}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({ ...prev, next: e.target.value }))
+                    }
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                  <input
+                    type={showPasswords ? 'text' : 'password'}
+                    placeholder="Confirm new password"
+                    value={passwordForm.confirm}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({ ...prev, confirm: e.target.value }))
+                    }
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+
+                  {passwordError && (
+                    <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                      {passwordError}
+                    </div>
+                  )}
+
+                  {passwordSuccess && (
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                      {passwordSuccess}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      disabled={passwordLoading}
+                      className="flex-1 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:bg-blue-400"
+                    >
+                      {passwordLoading ? 'Updating...' : 'Save password'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPasswordForm(false);
+                        setPasswordForm({ next: '', confirm: '' });
+                        setPasswordError(null);
+                        setPasswordSuccess(null);
+                      }}
+                      className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </aside>
 

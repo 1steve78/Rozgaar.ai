@@ -6,26 +6,31 @@ import SocialLogin from './SocialLogin';
 
 export default function AuthLayout() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-100 via-white to-sky-200 p-6">
-      <div className="max-w-5xl w-full bg-white rounded-3xl shadow-xl overflow-hidden">
-        <div className="grid md:grid-cols-2">
-          {/* Left side - Features */}
-          <AuthFeatures />
-          
-          {/* Right side - Auth Form */}
-          <div className="p-10 flex flex-col justify-center">
+    <div className="relative min-h-screen overflow-hidden bg-[#f6f7fb] px-4 py-10 sm:px-6 lg:px-10">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 right-0 h-80 w-80 rounded-full bg-blue-200/50 blur-3xl" />
+        <div className="absolute -bottom-24 left-0 h-80 w-80 rounded-full bg-sky-200/50 blur-3xl" />
+      </div>
+
+      <div className="relative mx-auto w-full max-w-6xl">
+        <div className="grid overflow-hidden rounded-[32px] border border-white/60 bg-white/80 shadow-[0_40px_120px_rgba(15,23,42,0.15)] backdrop-blur lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="p-8 sm:p-12 lg:p-14">
             <AuthForm />
-            
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-6">
-              <div className="flex-1 border-t border-gray-300"></div>
-              <span className="text-sm text-gray-500">or</span>
-              <div className="flex-1 border-t border-gray-300"></div>
+
+            <div className="mt-8 flex items-center gap-4">
+              <div className="h-px flex-1 bg-slate-200" />
+              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
+                Or
+              </span>
+              <div className="h-px flex-1 bg-slate-200" />
             </div>
-            
-            {/* Social Login */}
-            <SocialLogin />
+
+            <div className="mt-6">
+              <SocialLogin />
+            </div>
           </div>
+
+          <AuthFeatures />
         </div>
       </div>
     </div>

@@ -1,36 +1,39 @@
-Rozgaar.ai is a Next.js app for skill‑based job discovery. It combines resume/skill extraction, AI‑assisted search, and multi‑source job ingestion to help users find relevant roles faster.
+# Rozgaar.ai
 
-**Features**
+Skill-based job discovery for early-career talent. Rozgaar.ai combines resume/skill extraction, AI-assisted search, and multi-source job ingestion to surface roles that actually fit.
+
+## Features
 - Skill-driven job search with smart filters
 - Multi-source job ingestion (Adzuna, RemoteOK, Remotive)
-- AI résumé skill extraction (PDF/DOCX)
-- Job recommendations based on user skills
-- Supabase auth + profile
+- AI resume skill extraction (PDF/DOCX)
+- Personalized job recommendations
+- Supabase authentication and profiles
+- RAG-style career guidance chat
 
-**Tech Stack**
+## Tech Stack
 - Next.js (App Router)
 - Supabase (Auth + Postgres)
 - Drizzle ORM
 - Tailwind CSS
 - Groq/OpenRouter for skill extraction
 
-**Getting Started**
+## Getting Started
 1. Install dependencies
    ```bash
    npm install
    ```
-2. Create env file
+2. Create your local env file
    ```bash
    copy .env.example .env.local
    ```
-3. Fill in required environment variables (see below).
+3. Fill in environment variables (see below)
 4. Run the dev server
    ```bash
    npm run dev
    ```
 5. Open `http://localhost:3000`
 
-**Environment Variables**
+## Environment Variables
 Set these in `.env.local` (see `.env.example`):
 - `DATABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_URL`
@@ -44,19 +47,19 @@ Set these in `.env.local` (see `.env.example`):
 - `OPENROUTER_API_KEY`
 - `GROQ_API_KEY`
 
-**Scripts**
+## Scripts
 - `npm run dev` — start dev server
 - `npm run build` — build for production
 - `npm run start` — start production server
 - `npm run lint` — lint
 
-**Notes**
+## Notes
 - Some DB columns (profile fields, salary) may require migrations before enabling select queries.
 - Ingestion is rate-limited and capped to 10 jobs per request.
 
-**Limits (Free Tier)**
+## Limits (Free Tier)
 - 3 job fetches per day
 - 10 chat messages per day
 
-**Deploy**
+## Deploy
 Use your preferred hosting (Vercel recommended for Next.js). Ensure all env vars are set in the hosting environment.
